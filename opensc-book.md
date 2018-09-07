@@ -28,12 +28,12 @@ version: 0.1
 しかし公的個人認証が広く活用されるにはまだ多くの課題がある状況です。
 
 まず国民全体に対する認知度が足りていません。
-とりわけ、この本の対象読者であるような技術者にさえよく知られていないシステムが、安心して利用できる社会基盤として世の中に普及するのは難しいでしょう。
+とりわけ、この本の対象読者であるような技術者にさえよく知られていないシステムが、安心して利用できる社会基盤として世の中に普及することは難しいでしょう。
 
 2章ではOpenSCというソフトウェアを使いながらマイナンバーカードにアクセスする方法を紹介します。
 OpenSCはクロスプラットホームなソフトウェアですのでWindows、macOS、Linuxなど様々な環境で試すことができます。
 
-マイナンバーカードのブラックボックスを明らかにし、「なんとなく怖い」という懸念点を払拭できれば幸いです。
+この本ではマイナンバーカードのブラックボックスを明らかにし、「なんとなく怖い」という懸念点を払拭できれば幸いです。
 
 \tableofcontents
 
@@ -48,7 +48,7 @@ OpenSCはクロスプラットホームなソフトウェアですのでWindows�
 また、表面には氏名・住所・顔写真が記載されているので、これまで運転免許証で行っていたような本人確認にも利用できるでしょう。
 これらはカードという物理的な特徴を用いた機能ですが、カードに含まれているICチップは更にいくつかの機能を持っています。
 
-![マイナンバーカードのICチップ](static/structure.eps){width=50%}
+![マイナンバーカードのICチップ](static/incard.pdf){width=50%}
 
 マイナンバーカードのICチップの中はこんな風になっているよ、と総務省は説明しています。
 上から、公的個人認証AP、券面事項補助入力AP、券面事項確認AP、住基AP、と4つの機能が入っていて、空き領域には新しい機能を追加できます。
@@ -201,9 +201,9 @@ Windows, macOSの人は以下のページから最新リリース版をダウン
 
 \clearpage
 
-## 基本的な使い方
+## pkcs15-toolの使い方
 
-ここではマイナンバーカードを使ってOpenSCの基本的な使い方を説明します。
+ここではマイナンバーカードを使ってOpenSCに付属するツールの使い方を説明します。
 
 まずカード内のすべてのPKCS#15オブジェクトをダンプします。
 PINオブジェクト、秘密鍵オブジェクト、公開鍵オブジェクト、証明書オブジェクトをそれぞれ2セット確認できます。
@@ -230,15 +230,28 @@ $ pkcs15-tool -r 1 | openssl x509 -text -noout
 $ pkcs15-tool -r 2 -a 2 --verify-pin | openssl x509 -text -noout
 ~~~
 
-最後にCA証明書の出力です。
+証明書IDは以下のように対応しています。
+
+1. ユーザー認証用証明書
+2. デジタル署名用証明書
+3. ユーザー認証用CA証明書
+4. デジタル署名用CA証明書
+
+opensslコマンドに慣れた方は、ユーザー認証用証明書をCA証明書で検証する動作を確認してみても良いでしょう。
 
 ~~~ {.bash}
+# ユーザー認証用証明書を出力
+$ pkcs15-tool -r 1 > auth.pem
 # ユーザー認証用CA証明書を出力
-$ pkcs15-tool -r 3
-
-# デジタル署名用CA証明書を出力
-$ pkcs15-tool -r 4
+$ pkcs15-tool -r 3 > authCA.pem
+# CA証明書で証明書を検証
+$ openssl verify -CAfile authCA.pem auth.pem
+auth.pem: OK
 ~~~
+
+## pkcs11-toolの使い方
+
+
 
 \clearpage
 
@@ -257,7 +270,12 @@ OpenSC、Java Runtimeのインストール
 $ sudo apt install -y opensc openjdk-8-jre
 ~~~
 
-続いて設定ファイルを2つ編集します。
+下記URLからJSignPDFをダウンロードしてzipファイルを展開します。
+今回はJSignPdf-1.6.3.zipを利用しました。
+
+<http://jsignpdf.sourceforge.net/>
+
+zipファイルを展開したら、設定ファイルを2つ編集します。
 
 conf/conf.properties を以下のように編集(コメントを外すだけです):
 
@@ -276,6 +294,7 @@ slot=1
 ~~~
 
 ここで`slot=1`を指定しているのは公的個人認証のデジタル署名用証明書で署名するためです。
+(slot=0はユーザー認証用の証明書に対応します)
 
 JSignPDFを実行します。
 
@@ -283,11 +302,13 @@ JSignPDFを実行します。
 $ java -jar JSignPdf.jar
 ~~~
 
-JSIgnPDFのGUIではキーストアタイプに「PKCS11」を選択し、キーストアパスワードに公的個人認証の電子署名用パスワードを入力します。
+![JSignPDFのUI](static/jsignpdf.png){width=100%}
+
+JSIgnPDFのUIではキーストアタイプに「PKCS11」を選択し、キーストアパスワードに公的個人認証の電子署名用パスワードを入力します。
 パスワードのアルファベットは大文字で入力してください。
 入力PDFファイルと出力PDFファイルを指定して「Sign It」ボタンを押すと署名できます。
 
-署名できたものの、正しく署名できたのか不安になることでしょう。
+これでPDF署名が完了しましたが、正しく署名できたのか不安になることでしょう。
 JSignPDFには簡易的な検証を行うツール(Verifier.jar)も付属しておりこれを使って署名済みPDFを検証できます。
 
 ~~~ {.bash}
@@ -299,16 +320,24 @@ $ java -jar Verifier.jar signed.pdf -c ca.pem
 出力結果に`fails=no`という行があればCA証明書による署名検証は成功しています。
 ただこちらのツールはデバッグツールのようで通常これを使うことはないでしょう。
 
-Adobe Acrobat Reader DCで署名検証すると以下の様に表示されます。[^acrobatreader]
+Windows上のAdobe Acrobat Reader DCで署名済みPDFを開くと次の様に表示されます。[^acrobatreader]
 
 ![Adobe Acrobat Reader DCの署名パネル](static/acrobatreader.png){width=100%}
 
+[^acrobatreader]: Acrobat Reader DCの「環境設定」->「検証」->「Windows統合」->「署名を検証」にチェックをいれると、Windowsの証明書ストアを参照するようになります。
 
-[^acrobatreader]: 「環境設定」->「検証」->「Windows統合」->「署名を検証」にチェックをいれると、Windowsの証明書ストアを参照するようになった。
 
 もちろんこれは失効情報などを確認しない簡易的な署名検証です。
 PDFに署名された証明書からCA署名書までの信頼のパスを構築できたことを意味します。
 
+### まとめ
+
+現在、法務局で行われる登記などの手続きは公的個人認証で署名したPDFファイルでの電子申請を受け付けているそうです。
+
+実際に今回の方法で署名したPDFファイルが法務局で受理されるのかどうか、筆者は試していません（誰か試してみてください）。
+
+普段Linuxデスクトップを利用されている皆さんは、様々な行政サービスを受けられず、悲しい思いをされていることでしょう。
+こんな風にプラットホーム非依存な方法で様々な行政手続きが出来るようになると嬉しいですね。
 
 \clearpage
 
@@ -354,12 +383,231 @@ Enter PIN for 'JPKI (User Authentication PIN)':
 
 今回はSSH認証なので証明書は使いませんでしたが、証明書の失効情報を得るにはなぜか総務大臣の認可が必要だそうなので証明書の検証が必要な場合は面倒ですが申請するしかないですね。
 
+\clearpage
+
 ## マイナンバーカードでPAM認証
+
+Linuxをサーバーとして利用している場合、普通はSSHでリモートログインするのでパスワード認証を使う機会はもう少ないだろうと思います。
+
+しかしデスクトップLinuxへのログインはどうでしょうか。まだまだパスワード認証が使われていますし、オンプレで設置している物理サーバーのrootパスワードを複数人で共有するといった運用もまだ残っているのではないでしょうか。
+
+こんな時、物理的な認証トークンがあればずっと安全な運用になるのですが、私達はそんなデバイスを既に持っているではありませんか。そう、マイナンバーカードです。
+
+ここではマイナンバーカード内の鍵でLinuxにログインしたり、sudoしたり、多要素認証デバイスとしてカードを活用する方法を紹介します。
+
+### PAM
+
+LinuxにはPAMという認証システムとアプリケーションを分離するための仕組みが用意されています。
+デフォルトの認証モジュール(pam_unix.so)は`/etc/shadow`を参照してパスワード認証を行っていますが、パスワード認証以外にも様々な認証モジュール用意されていて、独自の認証モジュールを自作することだってできます。
+
+PKCS#11に対応したデバイスで認証するための[pam_p11](https://github.com/OpenSC/pam_p11)というPAMモジュールがあります。マイナンバーカードは既にOpenSC経由でPKCS#11 APIを扱えるようになっていますので、pam_p11からOpenSCのpkcs11モジュールをロードすればうまくいきそうです。
+
+### インストール
+
+
+~~~ {.bash}
+$ sudo apt install -y opensc libpam-p11
+~~~
+
+### 公開鍵の設置
+
+pam_p11はユーザーのホームディレクトリに配置した公開鍵または証明書を参照してカードの所有を確認します。
+公開鍵はSSHと同様に `~/.ssh/authorized_keys` に設置します。
+ちょっと紛らわしいですがsshdだけでなくloginやsudoなどのプログラムがPAM経由でこのファイルを参照するということです。
+
+以下のコマンドで公的個人認証の公開鍵を配置します。
+
+~~~ {.bash}
+$ mkdir ~/.ssh/
+$ pkcs15-tool --read-ssh-key 1 >> ~/.ssh/authorized_keys
+~~~
+
+あるいは、証明書で認証する場合は `~/.eid/authorized_certificates` にPEM形式の証明書を配置します。
+
+以下のコマンドで公的個人認証の証明書を配置します。
+
+~~~
+$ mkdir ~/.eid/
+$ pkcs15-tool -r 1 >> ~/.eid/authorized_keys
+~~~
+
+### PAMの設定
+
+続いてPAMの設定を行いますが、今回はマイナンバーカードを利用した認証方式として、
+
+1. マイナンバーカードだけで認証
+2. マイナンバーカードとUNIXパスワードの両方を必要とする二要素認証
+3. マイナンバーカードとUNIXパスワードのどちらか一つを必要とする認証
+
+の構成例を紹介します。
+
+DebianやUbuntuでは共通のPAM設定ファイル`/etc/pam.d/common-auth`に以下の様な記述が見つかるはずです。
+
+~~~
+auth   [success=1 default=ignore]    pam_unix.so nullok_secure
+auth   requisite                     pam_deny.so
+(略)
+~~~
+
+この辺りを変更していきます。
+
+### マイナンバーカードだけで認証
+
+これがマイナンバーカードだけで認証する設定例です。`pam_unix.so`の設定を`pam_p11_openssh.so`で置き換えます。
+
+~~~
+-auth  [success=1 default=ignore]    pam_unix.so nullok_secure
++auth  [success=1 default=ignore]    pam_p11_openssh.so opensc-pkcs11.so
+ auth  requisite                     pam_deny.so
+(略)
+~~~
+
+`pam_p11_openssh.so`は設置した公開鍵`~/.ssh/authorized_keys`を参照しますので証明書を設置した場合は`pam_p11_opensc.so`に置き換えてください。
+
+Ubuntuのログイン画面(gdm3)ではこの様にパスワードの代わりにカードの暗証番号を入力します。
+
+![ログイン画面](static/pam-login.png){width=70%}
+
+他のログインマネージャーでも動作するはずです。
+
+### マイナンバーカードとUNIXパスワードの両方を必要とする二要素認証
+
+以下のように`pam_unix.so`の前に`pam_p11`の設定を記述します。
+
+~~~
++auth  [success=1 default=ignore]    pam_p11_openssh.so opensc-pkcs11.so
++auth  requisite                     pam_deny.so
+ auth  [success=1 default=ignore]    pam_unix.so nullok_secure
+ auth  requisite                     pam_deny.so
+(略)
+~~~
+
+たとえばこれで`sudo su`を実行するとJPKI認証用の暗証番号を入力した後に通常のパスワードを入力し両方の認証が通ってからrootに成れます
+
+~~~
+$ suod su
+Password for token User Authentication PIN (JPKI): ****
+[sudo] hamano のパスワード: ********
+# id
+uid=0(root) gid=0(root) groups=0(root)
+~~~
+
+### マイナンバーカードとUNIXパスワードのどちらか一つを必要とする認証
+
+~~~
++auth  [success=2 default=ignore]    pam_p11_openssh.so opensc-pkcs11.so
+ auth  [success=1 default=ignore]    pam_unix.so nullok_secure
+ auth  requisite                     pam_deny.so
+(略)
+~~~
+
+`/etc/pam.d/`以下の設定はしくじるとログインできなくなるので慎重にやりましょう。
+
+\clearpage
 
 ## マイナンバーカードでmacOSにログイン
 
+ここではマイナンバーカードで自分のMacOSにログインしたり、スクリーンロックを解除する方法を紹介します。
 
+MacOSで証明書を利用するにはCDSA/Tokendに対応する必要があります。
 
+OSへのログインだけでなく、SafariやGoogle ChromeによるTLSクライアント認証も動作します。
+
+### macOSにログイン
+
+macOSはスマートカードによるログインをサポートしています。
+ログイン時にパスワードの代わりに物理的なカードを利用して認証を行なうことができます。
+
+ActiveDirectoryと連携してドメインアカウントでログインすることも出来ますが今回はローカルアカウントへのログイン方法を紹介します。
+
+macOSのログインに対応したのはOpenSC 0.18.0からです。
+以下のページから最新版のOpenSCをダウンロードしてインストールしてください。
+
+まず、ユーザーアカウントとカードに入っている認証用証明書のペアリングを行います
+`sc_auth hash`コマンドで認証用証明書のハッシュ値を確認します。
+
+~~~ {.bash}
+$ sc_auth hash
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX User Authentication Key
+~~~
+
+そしてroot権限で`sc_auth accept`コマンドを実行し、ユーザーアカウントと証明書を紐付けます。
+
+~~~ {.bash}
+$ sudo sc_auth accept -u <username> -h XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+~~~
+
+ログインに利用する証明書は、信頼されたルート認証局からのパスが構築されている必要があります。
+キーチェーンアクセスから認証用CA証明書を右クリックして「常に信頼」をやってしまいそうですが、これではログイン後のユーザーコンテキストに限定されてしまうので上手くいきません。CA証明書はシステムキーチェインにインポートして信頼する必要があります。[^2]
+
+認証用CA証明書を以下のコマンドでカードから取り出します。
+
+~~~
+$ pkcs15-tool -r 3 > ca.pem
+$ openssl x509 -noout -subject -fingerprint -in ca.pem
+subject=C = JP, O = JPKI, OU = JPKI for user authentication,
+OU = Japan Agency for Local Authority Information Systems
+SHA1 Fingerprint=11:D9:CC:90:49:2B:10:FC:FA:D1:DA:D3:08:65:C2:40:98:39:13:D0
+~~~
+
+ちなみに、この証明書IDは以下のように対応しています。
+
+つづいて、このCA証明書をシステムキーチェインにインポートします。
+
+~~~ {.bash}
+$ sudo security add-trusted-cert -d -r trustRoot \
+  -k /Library/Keychains/System.keychain ca.pem
+~~~
+
+![macOSキーチェイン](static/macos-keychain.png){width=90%}
+
+最後に、スマートカードログオンを有効にして設定完了です。
+
+~~~ {.bash}
+$ sudo security authorizationdb smartcard enable
+$ security authorizationdb smartcard status
+Current smartcard login state: enabled \
+(system.login.console enabled, authentication rule enabled)
+~~~
+
+ログイン画面では通常以下のようにユーザー名とパスワードを入力しますが
+
+![login1](static/macos-login1.png)
+
+カードを読み込むと…
+
+![login2](static/macos-login2.png)
+
+この様にパスワードではなくPINの入力フォームに変わります。
+
+ユーザーと紐付いているため、ユーザーの選択画面でカードを刺すと自動的にそのユーザーが選択されます。
+また、スクリーンロックもこのようにPINの入力フォームになります。
+
+![screenlock2](static/macos-screenlock.png)
+
+### ダメな所
+
+* ログイン画面にPINの失敗回数が表示されないのが不親切。
+  - 3回間違えるとロックされて役所で再設定することになるので要注意。PINの失敗回数(あと何回間違えてよいのか)がわからなくなったら、`pkcs15-tool --list-pins`や[mynaコマンド](https://github.com/jpki/myna)で確認できます。
+* カードによるログイン後にキーチェーンにログインするパスワードを求められる。
+  - OSXはログイン時に入力したパスワード(もしくはPIN)で同時にキーチェーンにもログインするようだ、つまりキーチェーンのパスワードをカードのPINと同じに設定すれば面倒はなくなるが、これはやりたくない。
+* カードを取り出すと自動的にスクリーンロックをかける機能もあるがSierraでは動作しない。
+  - Sierraより前のバージョンでは動作する。
+
+### カード認証の歴史と今後について
+
+MacOSのスマートカード認証の歴史は2005年の米国大統領令HSPD-12に遡ります。
+これは米国連邦職員に安全で信頼性のある認証を義務付けるというものでした。
+HSPD-12を元にNISTがFIPS 201(PIVカード仕様)の標準化を行い、Appleはこれに準拠するためのCDSA/TokendフレームワークをOS X 10.4から提供し始めました。
+
+こうしてMacOSでPIVカード(米国公務員が利用)やCACカード(米軍が利用)の利用環境が整備されていきました。
+しかし、このCDSAフレームワークはOS X 10.7 Lion以降で非推奨となります。そして、PIVやCACのためのtokendが標準で付属しなくなりオープンソースコミュニティによるサポートに切り替わりました。[^3][^4]
+
+Appleは今後利用するセキュリティフレームワークとしてCryptoTokenKitを推奨していますが、詳細なドキュメントが無いためにPIVやCACの対応が進んでいません。
+
+Appleからもっと情報が出てくれば、OpenSCプロジェクトもCryptoTokenKitに移行するという動きも出てくると思われますが現状まだSierraでCDSAフレームワークを利用できるので、まだこのままでいいやという状況です。
+
+いきなりCDSAフレームワークが無くなると困る人が多すぎるのでまだしばらくは無くならないだろうと思われます。
 
 \backmatter
 \renewcommand{\thesection}{}
