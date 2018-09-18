@@ -2,12 +2,22 @@
 title: マイナンバーカードと電子署名の本
 author: 濱野　司
 date: 2018年10月8日
-#cover: static/cover.png
-oneside: true
-version: 0.9
+cover1: static/cover1.pdf
+openany: true
+version: 1
+okuduke:
+- key: Twitter
+  value: \@hamano
+- key: カバー
+  value: ai
+- key: 印刷
+  value: 日光企画
+- key: 配布
+  value: 技術書典5
 ---
 
 \frontmatter
+\maketitle
 \let\thesectionorig\thesection
 \renewcommand{\thesection}{}
 
@@ -815,10 +825,10 @@ Appleからもっと情報が出てくれば、OpenSCプロジェクトもCrypto
 # あとがき
 
 まだ多くの人が活用できていないであろうマイナンバーカードの活用例を紹介しました。
-いくつかの課題があり、一般に普及するにはまだ時間がかかりそうですが、
+広く普及するにはまだ時間がかかりそうですが、
 技術的な視点で見るとマイナンバーカードは紙、印鑑、パスワード認証などあらゆるレガシーを終わらせることが出来る素敵デバイスです。
 
-様々な公共システムがIE限定でLinuxデスクトップで使えなくて悲しいという様な事を書きましたが、
+様々な公共システムがIE限定でLinuxデスクトップで使えなくて悲しいという事を書きましたが、
 一般論として対応プラットフォームの拡大は悩ましい問題です。
 この様な公共システムには多大な税金が使われているからです。
 お金が無いから仕方がないね、と諦めてしまいそうですが電子先進国と言われるエストニアに目を向けてみると、
