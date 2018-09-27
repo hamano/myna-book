@@ -18,10 +18,8 @@ okuduke:
 
 \frontmatter
 \maketitle
-\let\thesectionorig\thesection
-\renewcommand{\thesection}{}
 
-# はじめに
+# はじめに {-}
 
 マイナンバーカードというとどんな印象があるでしょうか?
 
@@ -53,7 +51,6 @@ OpenSCはクロスプラットホームなソフトウェアですのでWindows�
 \tableofcontents
 
 \mainmatter
-\let\thesection\thesectionorig
 
 # マイナンバーカード
 
@@ -820,9 +817,8 @@ Appleからもっと情報が出てくれば、OpenSCプロジェクトもCrypto
 [^tokend]: <https://lists.apple.com/archives/fed-talk/2011/Jul/msg00099.html>
 
 \backmatter
-\renewcommand{\thesection}{}
 
-# あとがき
+# あとがき {-}
 
 まだ多くの人が活用できていないであろうマイナンバーカードの活用例を紹介しました。
 広く普及するにはまだ時間がかかりそうですが、
