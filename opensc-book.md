@@ -8,7 +8,7 @@ version: 1
 okuduke:
 - key: Twitter
   value: \@hamano
-- key: カバー
+- key: 表紙
   value: ai
 - key: 印刷
   value: 日光企画
