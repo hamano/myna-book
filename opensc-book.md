@@ -1,13 +1,15 @@
 ---
 title: マイナンバーカードと電子署名の本
 author: 濱野　司
-date: 2018年10月8日
+date: 2019年9月22日
 cover1: static/cover1.pdf
 openany: true
-version: 2-rc
+version: 2
 history:
 - date: 2018年10月8日
   version: 第1版発行(技術書典5)
+- date: 2019年9月22日
+  version: 第2版発行(技術書典7)
 okuduke:
 - key: Twitter
   value: \@hamano
