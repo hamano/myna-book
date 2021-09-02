@@ -1,0 +1,8 @@
+template: book
+src: myna-book.md
+top-level-division: chapter
+pdf:
+    output: myna-book.pdf
+    here: true
+    font: noto
+#    soma_table: true
